@@ -11,6 +11,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import torch
 
+torch.set_num_threads(2)
+torch.set_num_interop_threads(1)
+
 from utils.preprocessing import preprocess_fundus_image
 from utils.architecture import VesselUNet, predict_vessels
 
@@ -214,6 +217,19 @@ def case_thumb(which: int) -> Image.Image:
     return generate_sample_fundus_image(512, 42 if which == 1 else 123)
 
 
+@st.cache_data(max_entries=8, show_spinner=False)
+def cached_preprocess(img_bytes: bytes, clip: float):
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+    return preprocess_fundus_image(np.array(img), clip_limit=clip)
+
+
+@st.cache_data(max_entries=8, show_spinner=False)
+def cached_prob(stacked_bytes: bytes, shape: tuple) -> np.ndarray:
+    stacked = np.frombuffer(stacked_bytes, dtype=np.float32).reshape(shape)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return predict_vessels(get_vessel_model(), stacked, device=device)
+
+
 st.markdown(
     f"<div class='rv-nav'><div class='rv-brand'><div class='rv-mark'><img src='{icon_uri()}' alt='RetinaVessel'></div>"
     "<div><div class='rv-name'>RetinaVessel</div>"
@@ -266,12 +282,16 @@ with rail:
         palette = d2.selectbox("Probability palette", ["magma", "inferno", "plasma", "viridis", "jet"])
         view_size = st.slider("Viewport size", 280, 860, 560, 20)
 
-image, title = None, ""
+image, title, img_bytes = None, "", None
 if source == "Upload":
     if upload is not None:
         try:
             image = Image.open(upload).convert("RGB")
+            image.thumbnail((1024, 1024), Image.LANCZOS)
             title = upload.name
+            buf = io.BytesIO()
+            image.save(buf, format="PNG")
+            img_bytes = buf.getvalue()
         except Exception as e:
             st.error(f"Could not open image: {e}")
     else:
@@ -282,26 +302,41 @@ elif source == "Benchmark fundus":
     p = os.path.join("samples", "fundus_sample_1.png")
     image = Image.open(p).convert("RGB") if os.path.exists(p) else generate_sample_fundus_image(512, 42)
     title = "Benchmark retinal fundus"
+    if os.path.exists(p):
+        with open(p, "rb") as f:
+            img_bytes = f.read()
+    else:
+        img_bytes = None
 else:
     p = os.path.join("samples", "fundus_sample_2.png")
     image = Image.open(p).convert("RGB") if os.path.exists(p) else generate_sample_fundus_image(512, 123)
     title = "Dense microvascular retina"
+    if os.path.exists(p):
+        with open(p, "rb") as f:
+            img_bytes = f.read()
+    else:
+        img_bytes = None
 
 if image is None:
     st.stop()
+
+if img_bytes is None:
+    buf = io.BytesIO()
+    image.save(buf, format="PNG")
+    img_bytes = buf.getvalue()
 
 rgb = np.array(image)
 h, w = rgb.shape[:2]
 
 t0 = time.time()
 with st.spinner("Processing fundus signals..."):
-    green_ch, clahe_img, frangi_img, stacked = preprocess_fundus_image(rgb, clip_limit=clip)
+    green_ch, clahe_img, frangi_img, stacked = cached_preprocess(img_bytes, clip)
 prep_ms = (time.time() - t0) * 1000
 
 t1 = time.time()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 with st.spinner("Running VesselUNet..."):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    prob = predict_vessels(get_vessel_model(), stacked, device=device)
+    prob = cached_prob(stacked.tobytes(), stacked.shape)
     binary = (prob >= cutoff).astype(np.uint8) * 255
 infer_ms = (time.time() - t1) * 1000
 
