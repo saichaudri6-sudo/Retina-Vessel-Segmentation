@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import torch
 
 torch.set_num_threads(2)
-torch.set_num_interop_threads(1)
 
 from utils.preprocessing import preprocess_fundus_image
 from utils.architecture import VesselUNet, predict_vessels
