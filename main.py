@@ -347,8 +347,17 @@ def favicon():
 
 @app.get("/healthz")
 def healthz():
+    mem = {}
+    try:
+        with open("/proc/self/status", encoding="ascii") as fh:
+            for line in fh:
+                if line.startswith(("VmRSS", "VmHWM")):
+                    key, val = line.split(":", 1)
+                    mem[key] = int(val.split()[0]) // 1024  # MB
+    except OSError:
+        pass
     ok = os.path.exists(P.WEIGHTS_PATH) and P.ort_session() is not None
-    return JSONResponse({"ok": bool(ok), "engine": "onnxruntime", "case_limit": P.WORK_MAX})
+    return JSONResponse({"ok": bool(ok), "engine": "onnxruntime", "work_max": P.WORK_MAX, "mem_mb": mem})
 
 
 # ------------------------------------------------------------------ keep alive
