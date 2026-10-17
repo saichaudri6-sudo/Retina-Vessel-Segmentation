@@ -3,7 +3,9 @@
 import base64
 import io
 import os
+import threading
 import time
+import urllib.request
 import numpy as np
 import streamlit as st
 from PIL import Image
@@ -23,6 +25,32 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+
+@st.cache_resource
+def _start_keep_warm():
+    """Ping our own health endpoint every 5 min so hosted free tiers never idle out.
+
+    Uses the URL Render injects into the environment, so it is a no-op locally.
+    """
+    base = os.environ.get("RENDER_EXTERNAL_URL") or ""
+    if not base:
+        return False
+
+    def _ping() -> None:
+        while True:
+            try:
+                urllib.request.urlopen(f"{base}/_stcore/health", timeout=15).read(64)
+            except Exception:
+                pass
+            time.sleep(300)
+
+    threading.Thread(target=_ping, daemon=True, name="keep-warm").start()
+    return True
+
+
+_start_keep_warm()
+
 
 st.markdown("""
 <style>
