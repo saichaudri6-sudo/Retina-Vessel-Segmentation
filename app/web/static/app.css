@@ -1,9 +1,9 @@
 /* ============================================================
    RetinaVessel — the darkened exam room
-   Fundus reading happens with the lights off: the room is warm
-   plum-black, a retinal lamp breathes somewhere off-panel, and
-   faint capillaries drift in the gutters. Color stays with the
-   data; the room itself only whispers.
+   Fundus reading happens with the lights off: black silk waves
+   (ColorBends) undulate behind the panel, ember capillaries
+   drift in the gutters. Color stays with the data; the room
+   itself only whispers.
    ============================================================ */
 
 :root {
@@ -42,7 +42,8 @@ html, body {
 body { min-height: 100vh; position: relative; overflow-x: hidden; }
 
 /* --------------------------------------------------------------- room */
-/* the space around the instrument: plum-black with a warm exhale */
+/* the space around the instrument: black silk waves (WebGL ColorBends)
+   breathe behind everything; a soft vignette keeps the corners down */
 body::before {
   content: "";
   position: fixed; inset: 0; pointer-events: none;
@@ -54,25 +55,17 @@ body::before {
     linear-gradient(180deg, var(--room) 0%, var(--room-deep) 100%);
 }
 
-/* slow breathing — one lamp per shoulder, barely there */
 .room { position: fixed; inset: 0; pointer-events: none; }
 
-.lamp { position: absolute; border-radius: 50%; filter: blur(6px); }
-.lamp-a {
-  width: 46vw; height: 46vw; min-width: 420px; min-height: 420px;
-  left: -14vw; top: -20vw;
-  background: radial-gradient(circle, rgba(255, 138, 104, 0.085), transparent 66%);
-  animation: breathe 11s ease-in-out infinite;
-}
-.lamp-b {
-  width: 40vw; height: 40vw; min-width: 380px; min-height: 380px;
-  right: -12vw; bottom: -10vw;
-  background: radial-gradient(circle, rgba(255, 96, 72, 0.075), transparent 66%);
-  animation: breathe 15s ease-in-out infinite reverse;
-}
-@keyframes breathe {
-  0%, 100% { opacity: 0.55; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.06); }
+.bends { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* quiet the edges of the waves so the panel keeps its focus */
+.room::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 34% at 20% -6%, rgba(255, 120, 96, 0.04), transparent 62%),
+    radial-gradient(ellipse 130% 100% at 50% 50%, transparent 72%, rgba(4, 2, 3, 0.22) 100%);
 }
 
 /* their marker squiggles, invited in as ambient capillaries */
@@ -93,14 +86,7 @@ body::before {
   50% { opacity: 0.44; }
 }
 
-/* homely film grain over everything the lamp touches */
-.grain {
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
-  background-size: 160px 160px;
-  opacity: 0.045;
-  mix-blend-mode: overlay;
-}
+@keyframes breathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 
 /* ---------------------------------------------------------------- frame */
 .frame { position: relative; z-index: 1; max-width: 1240px; margin: 0 auto; padding: 24px 28px 58px; }
@@ -397,9 +383,7 @@ input[type="range"]:focus-visible { outline-offset: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lamp, .sdot, .strands-l, .strands-r { animation: none !important; }
-  .lamp-a { opacity: 0.8; }
-  .lamp-b { opacity: 0.8; }
+  .sdot, .strands-l, .strands-r { animation: none !important; }
   .strands-l { opacity: 0.3; }
   .strands-r { opacity: 0.26; }
   * { transition: none !important; animation: none !important; }
