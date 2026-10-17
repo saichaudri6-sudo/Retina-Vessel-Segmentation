@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RetinaVessel — retinal vessel reading station</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="{{ "" }}" aria-hidden>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/htmx.min.js"></script>
+</head>
+<body>
+<div class="frame">
+
+  <nav class="topbar" aria-label="RetinaVessel">
+    <div class="brand">
+      <img class="mark" src="/assets/app_icon.jpg" alt="" width="44" height="44">
+      <div class="bword">
+        <span class="b1">RetinaVessel</span>
+        <span class="b2">fundus reading station</span>
+      </div>
+    </div>
+    <div class="status"><span class="sdot" aria-hidden="true"></span>VesselUNet · onnxruntime</div>
+  </nav>
+
+  <div class="instrument">
+    <aside class="rail" id="rail">
+      {{ tray_html | safe }}
+      <section class="railsec tune" aria-label="Signal and calibration">
+        <div class="lbl">Signal &amp; calibrate</div>
+        <form id="tuneform" hx-post="/ui/retune" hx-target="#bay" hx-swap="innerHTML" hx-include="#tuneform"
+              hx-trigger="input changed delay:280ms">
+          <div class="ctl">
+            <div class="ctl-l"><span>CLAHE gain</span><b id="ctl-clip">{{ "%0.1f" | format(clip_def) }}</b></div>
+            <input type="range" name="clip" min="1" max="10" step="0.5" value="{{ clip_def }}" autofocus="false">
+          </div>
+          <div class="ctl">
+            <div class="ctl-l"><span>Vessel threshold</span><b>{{ "%0.2f" | format(cutoff_def) }}</b></div>
+            <input type="range" name="cutoff" min="0.1" max="0.9" step="0.05" value="{{ cutoff_def }}">
+          </div>
+          <div class="ctl">
+            <div class="ctl-l"><span>Overlay strength</span><b>{{ "%0.0f%%" | format(op_def * 100) }}</b></div>
+            <input type="range" name="opacity" min="0.2" max="1" step="0.05" value="{{ op_def }}">
+          </div>
+          <div class="ctl">
+            <div class="ctl-l"><span>Eyepiece size</span><b>{{ view_def }} px</b></div>
+            <input type="range" name="view" min="280" max="860" step="20" value="{{ view_def }}">
+          </div>
+        </form>
+      </section>
+    </aside>
+    <main id="bay" tabindex="-1">
+      {{ bay_html | safe }}
+    </main>
+  </div>
+
+</div>
+</body>
+</html>

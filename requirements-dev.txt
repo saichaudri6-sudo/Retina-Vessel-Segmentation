@@ -1,0 +1,5 @@
+# Development only — model training + the ONNX export step.
+# The serving app (requirements.txt) never imports torch.
+torch
+torchvision
+matplotlib

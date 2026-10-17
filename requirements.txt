@@ -1,7 +1,10 @@
-streamlit
-torch
-torchvision
-opencv-python
+# Runtime requirements — serving only (no torch on target hardware)
+fastapi
+uvicorn[standard]
+onnxruntime
+opencv-python-headless
+numpy
 scikit-image
 pillow
-matplotlib
+jinja2
+python-multipart
