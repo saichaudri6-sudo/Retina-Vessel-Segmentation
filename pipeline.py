@@ -38,6 +38,9 @@ SAMPLES: Dict[str, Tuple[str, str, int]] = {
 
 _ort_session: Optional[InferenceSession] = None
 _ort_lock = threading.Lock()
+# Heavy stages (Frangi preprocess, ONNX inference) run one at a process at a
+# time. Concurrent computes multiply transient memory and OOM small hosts.
+_compute_lock = threading.Lock()
 
 
 def ort_session() -> InferenceSession:
@@ -47,7 +50,7 @@ def ort_session() -> InferenceSession:
         with _ort_lock:
             if _ort_session is None:
                 opts = SessionOptions()
-                opts.intra_op_num_threads = 2
+                opts.intra_op_num_threads = 1
                 opts.inter_op_num_threads = 1
                 opts.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
                 opts.log_severity_level = 3
@@ -223,14 +226,19 @@ class CaseSession:
             if self._clip == clip and self._pre is not None:
                 green, clahe, frangi, stacked = self._pre
                 return green, clahe, frangi, stacked, self._prep_ms, True
-            green, clahe, frangi, stacked, ms = precompute(self.rgb, clip)
-            keep = (green, clahe, frangi)
-            self._pre = (*keep, stacked.copy())
-            self._clip = clip
-            self._clip_prob = None
-            self._prob = None
-            self._prep_ms = ms
-            return green, clahe, frangi, stacked.copy(), ms, False
+            with _compute_lock:
+                # another thread may have computed this exact stage while we waited
+                if self._clip == clip and self._pre is not None:
+                    green, clahe, frangi, stacked = self._pre
+                    return green, clahe, frangi, stacked, self._prep_ms, True
+                green, clahe, frangi, stacked, ms = precompute(self.rgb, clip)
+                keep = (green, clahe, frangi)
+                self._pre = (*keep, stacked.copy())
+                self._clip = clip
+                self._clip_prob = None
+                self._prob = None
+                self._prep_ms = ms
+                return green, clahe, frangi, stacked.copy(), ms, False
 
     def Prob(self, clip: float) -> Tuple[np.ndarray, float, bool]:
         """(prob, infer_ms, cached) — prob for this clip (fresh Pre if needed)."""
@@ -238,14 +246,17 @@ class CaseSession:
         with self._lock:
             if self._clip_prob == clip and self._prob is not None:
                 return self._prob.copy(), self._infer_ms, True
-            stacked = self._pre[3]
-            t0 = time.perf_counter()
-            prob = infer_vessels(stacked)
-            ms = (time.perf_counter() - t0) * 1000.0
-            self._prob = prob
-            self._clip_prob = clip
-            self._infer_ms = ms
-            return prob.copy(), ms, False
+            with _compute_lock:
+                if self._clip_prob == clip and self._prob is not None:
+                    return self._prob.copy(), self._infer_ms, True
+                stacked = self._pre[3]
+                t0 = time.perf_counter()
+                prob = infer_vessels(stacked)
+                ms = (time.perf_counter() - t0) * 1000.0
+                self._prob = prob
+                self._clip_prob = clip
+                self._infer_ms = ms
+                return prob.copy(), ms, False
 
     def meta(self) -> Tuple[int, int, str]:
         return self.h, self.w, self.title
@@ -253,7 +264,7 @@ class CaseSession:
 
 _shepherd_lock = threading.Lock()
 _SESSIONS: Dict[str, CaseSession] = {}
-_SESSION_LIMIT = 24
+_SESSION_LIMIT = 6  # each cached session holds ~6 MB of derived arrays
 
 
 def get_session(sid: Optional[str]) -> CaseSession:
