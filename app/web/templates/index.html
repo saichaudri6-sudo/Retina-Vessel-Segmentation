@@ -9,6 +9,13 @@
   <script src="/static/htmx.min.js"></script>
 </head>
 <body>
+<div class="room" aria-hidden="true">
+  <div class="lamp lamp-a"></div>
+  <div class="lamp lamp-b"></div>
+  <div class="strands strands-l"></div>
+  <div class="strands strands-r"></div>
+  <div class="grain"></div>
+</div>
 <div class="frame">
 
   <header class="topbar" aria-label="RetinaVessel">
@@ -28,8 +35,7 @@
       {{ tray_html | safe }}
 
       <section class="railsec" aria-label="Processing">
-        <h2 class="lbl">Processing</h2>
-        <form id="tuneform" hx-post="/ui/retune" hx-target="#bay" hx-swap="innerHTML"
+        <h2 class="lbl">Processing</h2>        <form id="tuneform" hx-post="/ui/retune" hx-target="#bay" hx-swap="innerHTML"
               hx-include="#tuneform" hx-trigger="input change delay:260ms">
           <div class="ctl">
             <div class="ctl-l"><span>CLAHE gain</span><b data-fmt="f1">{{ "%.1f" | format(clip.default) }}</b></div>
