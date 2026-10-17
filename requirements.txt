@@ -1,10 +1,20 @@
-# Runtime requirements — serving only (no torch on target hardware)
+# Runtime — serving only. The process never imports torch.
+#
+# fastapi + uvicorn[standard] : ASGI web server (serves Jinja2 HTML fragments)
+# onnxruntime                 : runs the trained VesselUNet (exported from .pth)
+# opencv-python-headless      : image decode/encode/resize/CLAHE — headless wheels
+#                               are self-contained, so no OS apt packages needed
+# numpy                       : array math everywhere
+# scikit-image                : Frangi vesselness — part of the model's input contract
+# jinja2                      : HTML fragment templates
+# python-multipart            : multipart upload parsing for FastAPI
+#
+# Pillow was removed: OpenCV covers decode, encode and resampling.
 fastapi
 uvicorn[standard]
 onnxruntime
 opencv-python-headless
 numpy
 scikit-image
-pillow
 jinja2
 python-multipart

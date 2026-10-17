@@ -1,0 +1,44 @@
+<div class="bayinner">
+  <header class="bayhead">
+    <div class="tcol">
+      <h1 class="title">{{ title }}</h1>
+      <p class="meta"><span>{{ w }} &times; {{ h }} px</span><i>&middot;</i>
+        <span>green &rarr; CLAHE &rarr; Frangi</span></p>
+    </div>
+    <nav class="exports" aria-label="Export plates">
+      <span class="exlbl">Export</span>
+      <a class="exb" href="{{ x.mask }}">Mask</a>
+      <a class="exb" href="{{ x.overlay }}">Overlay</a>
+      <a class="exb" href="{{ x.prob }}">Probability</a>
+    </nav>
+  </header>
+
+  {% include "viewer.html" %}
+
+  <section class="stats" aria-label="Measurements">
+    <div class="stat">
+      <span class="lbl2">Vascular density</span>
+      <b class="num">{{ density }}<i class="unit">%</i></b>
+      <span class="sub2">{{ count }} vessel px</span>
+    </div>
+    <div class="stat">
+      <span class="lbl2">Mean confidence</span>
+      <b class="num">{{ conf }}<i class="unit">%</i></b>
+      <span class="sub2">avg p(vessel) inside mask</span>
+    </div>
+    <div class="stat">
+      <span class="lbl2">Inference</span>
+      <b class="num">{{ infer_ms }}<i class="unit">ms</i></b>
+      <span class="sub2">prep {{ prep_ms }} ms{% if cached %} &middot; cached{% endif %}</span>
+    </div>
+    <div class="stat">
+      <span class="lbl2">Resolution</span>
+      <b class="num small">{{ w }}&times;{{ h }}</b>
+      <span class="sub2">work scale &le; 640 px long edge</span>
+    </div>
+  </section>
+
+  <p class="guide">The threshold slider is the read-out dial: raise it to keep only
+  high-certainty vessels, lower it to include faint capillaries. Density counts the
+  share of pixels segmented as vessel; confidence is how strongly the model agreed.</p>
+</div>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RetinaVessel — fundus reading station</title>
+  <link rel="icon" href="/static/favicon.png">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/htmx.min.js"></script>
+</head>
+<body>
+<div class="frame">
+
+  <header class="topbar" aria-label="RetinaVessel">
+    <div class="brand">
+      <img class="mark" src="/static/app_icon.jpg" alt="" width="38" height="38">
+      <div class="bword">
+        <span class="b1">RetinaVessel</span>
+        <span class="b2">fundus reading station</span>
+      </div>
+    </div>
+    <div class="status"><span class="sdot" aria-hidden="true"></span>VesselUNet &middot; ONNX Runtime</div>
+  </header>
+  <div class="busyhair" id="busyhair" aria-hidden="true"><span></span></div>
+
+  <div class="instrument">
+    <aside class="rail" aria-label="Controls">
+      {{ tray_html | safe }}
+
+      <section class="railsec" aria-label="Processing">
+        <h2 class="lbl">Processing</h2>
+        <form id="tuneform" hx-post="/ui/retune" hx-target="#bay" hx-swap="innerHTML"
+              hx-include="#tuneform" hx-trigger="input change delay:260ms">
+          <div class="ctl">
+            <div class="ctl-l"><span>CLAHE gain</span><b data-fmt="f1">{{ "%.1f" | format(clip.default) }}</b></div>
+            <input type="range" name="clip" min="{{ clip.lo | g }}" max="{{ clip.hi | g }}" step="{{ clip.step | g }}" value="{{ clip.default | g }}">
+          </div>
+          <div class="ctl">
+            <div class="ctl-l"><span>Vessel threshold</span><b data-fmt="f2">{{ "%.2f" | format(cutoff.default) }}</b></div>
+            <input type="range" name="cutoff" min="{{ cutoff.lo | g }}" max="{{ cutoff.hi | g }}" step="{{ cutoff.step | g }}" value="{{ cutoff.default | g }}">
+          </div>
+          <div class="ctl">
+            <div class="ctl-l"><span>Overlay strength</span><b data-fmt="pct">{{ "%.0f%%" | format(opacity.default * 100) }}</b></div>
+            <input type="range" name="opacity" min="{{ opacity.lo | g }}" max="{{ opacity.hi | g }}" step="{{ opacity.step | g }}" value="{{ opacity.default | g }}">
+          </div>
+        </form>
+      </section>
+
+      <section class="railsec sidelight">
+        <p class="guide">The fusion stack &mdash; green channel &rarr; CLAHE contrast &rarr;
+        multiscale Frangi vesselness &mdash; feeds the U-Net. Rarely needs touching;
+        the threshold slider is the one that matters.</p>
+      </section>
+    </aside>
+
+    <main id="bay" tabindex="-1" aria-live="polite">
+      {{ bay_html | safe }}
+    </main>
+  </div>
+
+  <footer class="colophon">RetinaVessel &middot; research tool &mdash; not a diagnostic device</footer>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

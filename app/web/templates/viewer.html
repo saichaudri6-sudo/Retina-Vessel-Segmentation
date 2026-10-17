@@ -1,0 +1,33 @@
+{% if mode in paletted %}
+  {% set shown_palette = palette %}
+{% else %}
+  {% set shown_palette = none %}
+{% endif %}
+<div id="eyepiece" class="eyepiece">
+  <div class="viewbar">
+    <div class="chips" role="group" aria-label="Plate mode">
+      {% for key, label in modes %}
+      <button type="button" class="chip {{ 'on' if key == mode else '' }}" data-key="{{ loop.index }}"
+              aria-pressed="{{ 'true' if key == mode else 'false' }}"
+              hx-post="/ui/view" hx-target="#eyepiece" hx-swap="outerHTML"
+              hx-include="#tuneform" hx-vals='{"mode":"{{ key }}"}'>{{ label }}</button>
+      {% endfor %}
+    </div>
+    <div class="swatbar" {% if not shown_palette %}hidden{% endif %}>
+      <span class="swlbl">Plate</span>
+      {% for pal in palettes %}
+      <button type="button" class="swatch {{ pal }} {{ 'on' if shown_palette == pal else '' }}"
+              {% if not shown_palette %}tabindex="-1"{% endif %} aria-label="{{ pal | capitalize }} palette"
+              hx-post="/ui/retune" hx-target="#bay" hx-swap="innerHTML"
+              hx-include="#tuneform" hx-vals='{"palette":"{{ pal }}"}'></button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <figure class="viewport" id="viewport" tabindex="0"
+          aria-label="Plate viewport — scroll to zoom, drag to pan, double-click to reset">
+    <img id="viewport-img" src="{{ u[mode] }}" alt="{{ title }} — {{ mode | capitalize }} plate" draggable="false">
+    <figcaption class="zoomhud" id="zoomhud" aria-live="polite">100%</figcaption>
+    <span class="vhint" id="vhint">Scroll to zoom &middot; drag to pan &middot; double-click to fit</span>
+  </figure>
+</div>

@@ -3,3 +3,6 @@ __pycache__/
 .opencode/
 *.cookies
 .DS_Store
+.venv/
+.pytest_cache/
+.ruff_cache/

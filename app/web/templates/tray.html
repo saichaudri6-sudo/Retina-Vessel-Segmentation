@@ -1,0 +1,29 @@
+<section id="tray-card" class="railsec tray" {% if oob %}hx-swap-oob="true"{% endif %}>
+  <h2 class="lbl">Case</h2>
+  <div class="tiles" role="group" aria-label="Case selection">
+    <button type="button" class="tile {{ 'on' if case == 'bench' else '' }}" aria-label="Benchmark sample case"
+            hx-post="/ui/case" hx-target="#bay" hx-swap="innerHTML"
+            hx-include="#tuneform" hx-vals='{"case":"bench"}'>
+      <img src="/media/thumb?which=bench" alt="Benchmark sample thumbnail">
+      <span class="cap">Benchmark</span>
+    </button>
+    <button type="button" class="tile {{ 'on' if case == 'dense' else '' }}" aria-label="Dense sample case"
+            hx-post="/ui/case" hx-target="#bay" hx-swap="innerHTML"
+            hx-include="#tuneform" hx-vals='{"case":"dense"}'>
+      <img src="/media/thumb?which=dense" alt="Dense sample thumbnail">
+      <span class="cap">Dense</span>
+    </button>
+    <label class="tile up {{ 'on' if case == 'upload' else '' }}" aria-label="Upload your own fundus photograph">
+      <input type="file" name="file" accept="image/png,image/jpeg,image/tif,image/tiff"
+             hx-post="/ui/upload" hx-target="#bay" hx-swap="innerHTML" hx-trigger="change"
+             hx-encoding="multipart/form-data" hx-include="#tuneform">
+      {% if case == 'upload' and has_upload %}
+        <img class="upimg" src="/media/thumb?which=upload" alt="Uploaded image thumbnail">
+      {% else %}
+        <span class="glyph" aria-hidden="true">+</span>
+      {% endif %}
+      <span class="cap">Upload</span>
+    </label>
+  </div>
+  <div class="srcname">{{ src }}</div>
+</section>

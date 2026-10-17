@@ -8,15 +8,14 @@ analyzes multiscale eigenvalues of the image Hessian matrix to amplify tubular,
 vessel-like structures while attenuating planar background and point noise.
 """
 
-from typing import Tuple, Union
+from typing import Tuple
 import numpy as np
 import cv2
-from PIL import Image
 from skimage.filters import frangi
 
 
 def preprocess_fundus_image(
-    rgb_image: Union[np.ndarray, Image.Image],
+    rgb_image: np.ndarray,
     clip_limit: float = 3.0
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Preprocess a retinal fundus image for vessel segmentation.
@@ -29,7 +28,7 @@ def preprocess_fundus_image(
       5. Stacks Green, CLAHE, and Frangi into a 3-channel feature representation.
 
     Args:
-        rgb_image: Input fundus image as either a NumPy array (H, W, 3) or PIL Image.
+        rgb_image: Input fundus image as a NumPy uint8 array (H, W, 3) in RGB order.
         clip_limit: Contrast clipping limit for CLAHE (default: 3.0).
 
     Returns:
@@ -40,10 +39,7 @@ def preprocess_fundus_image(
                      comprising [Green, CLAHE, Frangi] channels.
     """
     # 1. Convert input to standard NumPy uint8 RGB array
-    if isinstance(rgb_image, Image.Image):
-        rgb_np = np.array(rgb_image)
-    else:
-        rgb_np = np.asarray(rgb_image)
+    rgb_np = np.asarray(rgb_image)
 
     # Handle grayscale or alpha channel
     if rgb_np.ndim == 2:

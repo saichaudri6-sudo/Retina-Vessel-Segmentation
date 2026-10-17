@@ -13,11 +13,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
-import torch
 import onnxruntime as ort
+import torch
 
 from utils.architecture import VesselUNet
-
 
 EXPORT_PATH = os.path.join("weights", "vessel_unet.onnx")
 

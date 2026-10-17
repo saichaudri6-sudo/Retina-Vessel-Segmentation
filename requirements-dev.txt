@@ -1,5 +1,8 @@
-# Development only — model training + the ONNX export step.
-# The serving app (requirements.txt) never imports torch.
+# Development only — training/export tooling + tests. The serving app
+# (requirements.txt) never imports these.
 torch
 torchvision
 matplotlib
+pytest
+httpx        # starlette TestClient backend
+ruff

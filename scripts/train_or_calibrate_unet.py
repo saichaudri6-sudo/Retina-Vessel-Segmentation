@@ -7,7 +7,6 @@ vascular segmentations by learning an optimal fusion of the 3 channels
 
 import os
 import sys
-import time
 from pathlib import Path
 
 # Add project root to path
@@ -15,15 +14,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+import cv2
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from PIL import Image
 
-from utils.preprocessing import preprocess_fundus_image
 from utils.architecture import VesselUNet
-
+from utils.preprocessing import preprocess_fundus_image
 
 
 def generate_training_fundus(size: int = 384, seed: int = 42):
@@ -115,9 +113,11 @@ def train_and_save():
         if s == 42:
             # Save a high-resolution benchmark sample image
             sample_rgb, _ = generate_training_fundus(size=512, seed=42)
-            Image.fromarray(sample_rgb).save(os.path.join("samples", "fundus_sample_1.png"))
+            cv2.imwrite(os.path.join("samples", "fundus_sample_1.png"),
+                        cv2.cvtColor(sample_rgb, cv2.COLOR_RGB2BGR))
             sample_rgb2, _ = generate_training_fundus(size=512, seed=123)
-            Image.fromarray(sample_rgb2).save(os.path.join("samples", "fundus_sample_2.png"))
+            cv2.imwrite(os.path.join("samples", "fundus_sample_2.png"),
+                        cv2.cvtColor(sample_rgb2, cv2.COLOR_RGB2BGR))
             print("Saved sample images to samples/ directory.")
 
         _, _, _, stacked = preprocess_fundus_image(rgb, clip_limit=3.0)

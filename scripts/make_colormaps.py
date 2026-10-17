@@ -9,14 +9,14 @@ Run:  python scripts/make_colormaps.py
 import os
 import sys
 
-import numpy as np
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-OUT_PATH = os.path.join("colormaps.py")
+OUT_PATH = os.path.join("app", "colormaps.py")
 
 
 def main() -> None:
