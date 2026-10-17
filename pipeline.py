@@ -51,6 +51,10 @@ def ort_session() -> InferenceSession:
                 opts.inter_op_num_threads = 1
                 opts.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
                 opts.log_severity_level = 3
+                # 512 MB hosts: the default CPU arena reserves hundreds of MB and
+                # keeps growing across inferences. Arena-free runs in +27 MB.
+                opts.enable_cpu_mem_arena = False
+                opts.enable_mem_pattern = False
                 _ort_session = InferenceSession(
                     WEIGHTS_PATH, sess_options=opts, providers=["CPUExecutionProvider"]
                 )
