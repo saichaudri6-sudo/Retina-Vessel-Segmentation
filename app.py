@@ -33,7 +33,7 @@ def _start_keep_warm():
 
     Uses the URL Render injects into the environment, so it is a no-op locally.
     """
-    base = os.environ.get("RENDER_EXTERNAL_URL") or ""
+    base = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("APP_URL") or ""
     if not base:
         return False
 
