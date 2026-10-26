@@ -32,7 +32,9 @@
   }
 
   /* ------------------------------------------------------- plate viewer */
-  var MIN_FACTOR = 0.25, MAX_FACTOR = 8;
+  // zoom is expressed relative to FIT (100% = the whole plate is visible),
+  // and the floor is fit itself — you can never zoom out past "all visible"
+  var MAX_FACTOR = 8;
 
   function initViewer() {
     var vp = document.getElementById("viewport");
@@ -54,7 +56,7 @@
     function apply() {
       clampPan();
       img.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
-      hud.textContent = Math.round(scale * 100) + "%";
+      hud.textContent = Math.round(scale / fit * 100) + "%";
     }
 
     function fitImage() {
@@ -66,7 +68,7 @@
 
     function zoom(factor) {
       var next = scale * factor;
-      scale = Math.min(Math.max(fit * MIN_FACTOR, next), fit * MAX_FACTOR);
+      scale = Math.min(Math.max(fit, next), fit * MAX_FACTOR);
       apply();
       vp.classList.add("touched");
     }
@@ -79,7 +81,14 @@
     whenLoaded(fitImage);
 
     window.addEventListener("resize", function () {
-      whenLoaded(function () { if (!vp.classList.contains("touched")) fitImage(); else apply(); });
+      whenLoaded(function () {
+        var vw = vp.clientWidth || 1, vh = vp.clientHeight || 1;
+        var iw = img.naturalWidth || 1, ih = img.naturalHeight || 1;
+        fit = Math.min(vw / iw, vh / ih);
+        if (!vp.classList.contains("touched")) { scale = fit; tx = 0; ty = 0; }
+        else if (scale < fit) { scale = fit; }   // viewport grew — stay at full view
+        apply();
+      });
     });
 
     vp.addEventListener("wheel", function (e) {
