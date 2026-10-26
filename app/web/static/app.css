@@ -343,6 +343,9 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(255, 69, 58, 0.07); padding: 13px 16px; margin: 14px 0 0;
 }
 
+/* upload alerts land beside the tray, never over the scan viewport */
+#upalert:empty { display: none; }
+
 .colophon {
   margin-top: 22px; text-align: center;
   font-size: 11.5px; color: var(--dimm); letter-spacing: 0.02em;

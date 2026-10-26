@@ -108,9 +108,32 @@ def test_upload_rejects_junk(client):
     assert "could not be opened" in r.text
 
 
+def test_upload_reject_keeps_bay_and_alerts_oob(client):
+    """A bad file must not wipe the scan viewport: bay survives, alert is OOB."""
+    r = client.post("/ui/upload", files={"file": ("junk.png", b"definitely not an image", "image/png")})
+    assert 'class="bayinner"' in r.text                            # rebuilt intact bay
+    assert 'id="upalert" hx-swap-oob="true"' in r.text             # alert rides its own slot
+    assert "upload again" in r.text                                # names a real remedy
+
+
 def test_upload_rejects_empty(client):
     r = client.post("/ui/upload")
-    assert "Choose an image file first." in r.text
+    assert "Choose an image file first" in r.text
+    assert 'id="upalert"' in r.text
+
+
+def test_upload_alert_cleared_on_success(client):
+    good = SAMPLE.read_bytes()
+    r = client.post("/ui/upload", files={"file": ("ok.png", good, "image/png")})
+    assert r.status_code == 200
+    assert 'id="upalert" hx-swap-oob="true">' in r.text           # empty node = alert gone
+
+
+def test_upload_rejects_heic_signature(client):
+    """Minimal HEIC sniff: ftyp box with a heif-family brand."""
+    heic = b"\x00\x00\x00\x18ftypheic" + b"\x00" * 24
+    r = client.post("/ui/upload", files={"file": ("photo.heic", heic, "image/heic")})
+    assert "HEIC" in r.text
 
 
 # ------------------------------------------------------------------- export

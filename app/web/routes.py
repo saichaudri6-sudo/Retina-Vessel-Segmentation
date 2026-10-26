@@ -71,6 +71,33 @@ def _error(message: str) -> str:
     return templates.get_template("err.html").render({"message": message})
 
 
+def _alert_oob(message: str) -> str:
+    """Alert card wrapped as a complete #upalert node (out-of-band slot)."""
+    return templates.get_template("upalert.html").render({"message": message})
+
+
+def _file_reject_reason(data: bytes) -> str:
+    """Turn undecodable bytes into a message naming the actual culprit."""
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        brand = data[8:12].lower()
+        if brand.startswith((b"hei", b"mif", b"heif", b"hvc")):
+            return ("That upload is an iPhone HEIC photo — browsers can't read it directly. "
+                    "On the iPhone set Settings → Camera → Formats → Most Compatible, "
+                    "or convert the photo to JPG/PNG, then upload again.")
+        if brand.startswith(b"avi"):
+            return ("That upload is AVIF video-codec still — not readable here. "
+                    "Re-save it as JPG or PNG, then upload again.")
+        return ("That container could not be opened. Re-save the image as "
+                "PNG, JPG or TIFF, then upload again.")
+    if data[:3] == b"GIF":
+        return ("That upload is an animated GIF — mask plates need a still scan. "
+                "Re-save it as PNG or JPG, then upload again.")
+    if data[:5] == b"%PDF-":
+        return "That upload is a PDF document — export the image itself as JPG or PNG, then try again."
+    return ("That file could not be opened as a scan. Re-save it as PNG, JPG or TIFF "
+            "(HEIC, AVIF and animated GIF are not readable yet) and upload again.")
+
+
 def _html(request: Request, payload: str, status_code: int = 200) -> Response:
     """HTML fragment response that carries / refreshes the session cookie."""
     resp = HTMLResponse(payload, status_code=status_code)
@@ -138,13 +165,15 @@ def _bay_ctx(sess: sessions.CaseSession, tune: Tune) -> dict[str, Any]:
 
 
 def _bay_response(request: Request, sess: sessions.CaseSession, tune: Tune,
-                  with_tray: bool = False) -> Response:
+                  with_tray: bool = False, clear_alert: bool = False) -> Response:
     """Fragment response: bay, optionally plus a swap-out-of-band tray."""
     bay_html = _render(request, "bay.html", _bay_ctx(sess, tune))
-    if not with_tray:
-        return _html(request, bay_html)
-    tray_html = _render(request, "tray.html", {**_tray_ctx(sess), "oob": True})
-    return _html(request, bay_html + "\n" + tray_html)
+    if with_tray:
+        tray_html = _render(request, "tray.html", {**_tray_ctx(sess), "oob": True})
+        bay_html += "\n" + tray_html
+    if clear_alert:
+        bay_html += "\n" + _alert_oob("")  # empty the upload alert slot
+    return _html(request, bay_html)
 
 
 def _finish(request: Request, data: bytes, media_type: str) -> Response:
@@ -184,13 +213,17 @@ async def ui_upload(request: Request, file: UploadFile | None = File(None)):
     sess = _session_for(request)
     data = await file.read() if file else b""
     if not data:
-        return _html(request, _error("Choose an image file first."))
+        message = "Choose an image file first — tap the + tile, then pick a PNG, JPG or TIFF."
+        return _html(request, _render(request, "bay.html", _bay_ctx(sess, tune)) + "\n" + _alert_oob(message))
     if len(data) > UPLOAD_LIMIT_BYTES:
-        return _html(request, _error("That file is over 18 MB — export a smaller copy and retry."))
+        message = (f"That file is over {UPLOAD_LIMIT_BYTES // (1024 * 1024)} MB — "
+                   "export a smaller copy and retry. The previous scan is still shown.")
+        return _html(request, _render(request, "bay.html", _bay_ctx(sess, tune)) + "\n" + _alert_oob(message))
     if decode_rgb(data) is None:
-        return _html(request, _error("That file could not be opened. PNG, JPG or TIFF only."))
+        message = _file_reject_reason(data)
+        return _html(request, _render(request, "bay.html", _bay_ctx(sess, tune)) + "\n" + _alert_oob(message))
     sess.set_upload(data, (file.filename if file else "") or "Uploaded fundus")
-    return _bay_response(request, sess, tune, with_tray=True)
+    return _bay_response(request, sess, tune, with_tray=True, clear_alert=True)
 
 
 @router.post("/ui/retune")

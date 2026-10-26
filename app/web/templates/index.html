@@ -32,6 +32,7 @@
   <div class="instrument">
     <aside class="rail" aria-label="Controls">
       {{ tray_html | safe }}
+      <div id="upalert" aria-live="assertive"></div>
 
       <section class="railsec" aria-label="Processing">
         <h2 class="lbl">Processing</h2>        <form id="tuneform" hx-post="/ui/retune" hx-target="#bay" hx-swap="innerHTML"

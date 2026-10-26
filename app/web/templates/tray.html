@@ -14,7 +14,7 @@
       <span class="cap">Dense</span>
     </button>
     <label class="tile up {{ 'on' if case == 'upload' else '' }}" aria-label="Upload your own fundus photograph">
-      <input type="file" name="file" accept="image/png,image/jpeg,image/tif,image/tiff"
+      <input type="file" name="file" accept="image/png,image/jpeg,image/webp,image/tif,image/tiff"
              hx-post="/ui/upload" hx-target="#bay" hx-swap="innerHTML" hx-trigger="change"
              hx-encoding="multipart/form-data" hx-include="#tuneform">
       {% if case == 'upload' and has_upload %}
